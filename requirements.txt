@@ -1,0 +1,5 @@
+pip
+setuptools
+pandas
+numpy
+BeautifulSoup4

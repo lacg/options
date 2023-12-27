@@ -1,0 +1,16 @@
+[build-system]
+requires = ["flit_core >=3.9,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "ras"
+author = "Luiz Garcia"
+author-email = "lacg@me.com"
+maintainer = "Luiz Garcia"
+requires-python = ">=3.11"
+license = "MIT License"
+classifiers = ["Programming Language :: Python :: 3"]
+
+[tool.flit.scripts]
+balloons = "ras.quadcopter:balloons"
+snowglobes = "ras.quadcopter:snowglobes"
