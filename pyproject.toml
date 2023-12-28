@@ -12,5 +12,4 @@ license = "MIT License"
 classifiers = ["Programming Language :: Python :: 3"]
 
 [tool.flit.scripts]
-balloons = "ras.quadcopter:balloons"
-snowglobes = "ras.quadcopter:snowglobes"
+options = "ras.options:options"

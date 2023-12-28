@@ -18,10 +18,6 @@ import sys
 
 def main() -> None:
 	"""
-	Runs the selected game.
-
-	Args:
-		game (str): The game to run (balloon, snowglobe)
 	"""
 	print("Hi")
 
