@@ -1,7 +1,11 @@
 import pandas as pd
 import numpy as np
 import requests, json
-from bs4 import BeautifulSoup
+from scipy.stats import norm
+from enum import Enum
+
+OptionType = Enum("OptionType", ["Call", "Put"])
+
 
 class Stock():
 
@@ -63,16 +67,11 @@ class Stock():
 		self.calls = self.response["options"][0]["calls"]
 		self.puts = self.response["options"][0]["puts"]
 
-		""" self.options['Strike'] = self.options['Strike'].apply(lambda x: float(x))
-		self.options['Bid'] = self.options['Bid'].apply(lambda x: float(x))
-		self.options['Ask'] = self.options['Ask'].apply(lambda x: float(x))
-		self.options['Implied Volatility'] = self.options['Implied Volatility'].apply(lambda x: float(x.strip('%')) / 100)
-		self.options = self.options[self.options['Strike'] > self.options['Last Price'] * 0.9]
-		self.options = self.options[self.options['Strike'] < self.options['Last Price'] * 1.1]
-		self.options = self.options[self.options['Bid'] != 0]
-		self.options = self.options[self.options['Ask'] != 0]
-		self.options = self.options[self.options['Ask'] - self.options['Bid'] < 0.1]
-		print("Passei por aqui") """
+	def black_scholes(self, S, K, T, r, sigma, option = OptionType.Call):
+		d1 = (np.log(S/K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+		d2 = d1 - sigma * np.sqrt(T)
+		response = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+		return response if option == OptionType.Call else -response
 
 	def show(self):
 		print(self.filteredCalls)
