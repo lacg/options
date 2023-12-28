@@ -2,5 +2,5 @@
 
 from ras.stocks.stocks import Stock
 
-def stock() -> None:
-	Stock().show()
+def stock(symbol: str = "AAPL") -> None:
+	Stock().show(symbol)

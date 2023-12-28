@@ -80,7 +80,11 @@ class Stock():
 		self.puts = self.response["options"][0]["puts"]
 
 	def _update_link_black_scholes(self, link):
-		link["theoreticalPrice"] = self.black_scholes(self.lastPrice, link['strike'], self._delta_time(link), 0.02, link['impliedVolatility'], option=link["type"])
+		dt = self._delta_time(link)
+		theoreticalPrice = self.black_scholes(self.lastPrice, link['strike'], dt, 0.02, link['impliedVolatility'], option=link["type"])
+		link["theoreticalPrice"] = theoreticalPrice
+		link['profitLossIfExpired'] = (theoreticalPrice - link['ask']) if link['type'] == OptionType.Call else link['bid'] - theoreticalPrice
+		link['probabilityOfProfit'] = norm.cdf((theoreticalPrice - link['lastPrice']) / (link['impliedVolatility'] *  np.sqrt(dt)))
 
 	def black_scholes(self, S, K, T, r, sigma, option = OptionType.Call):
 		d1 = (np.log(S/K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
