@@ -1,6 +1,6 @@
 """Controlling a rigidbody quadcopter using Control Theory and Reinforcement Learning"""
 
-from ras.options.options import Options
+from ras.stocks.stocks import Stock
 
-def options() -> None:
-	Options().show()
+def stock() -> None:
+	Stock().show()
