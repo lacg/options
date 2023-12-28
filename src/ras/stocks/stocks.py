@@ -1,10 +1,12 @@
+from datetime import datetime, timezone
+import json
 import pandas as pd
 import numpy as np
 import requests, json
 from scipy.stats import norm
 from enum import Enum
 
-OptionType = Enum("OptionType", ["Call", "Put"])
+OptionType = Enum("OptionType", { "Call": "Call", "Put": "Put" }, type=str)
 
 
 class Stock():
@@ -20,7 +22,7 @@ class Stock():
 	@calls.setter
 	def calls(self, value):
 		self._calls = value
-		self.filteredCalls = self._filterChain(value)
+		self.filteredCalls = self._filterChain(value, OptionType.Call)
 
 	@property
 	def lastPrice(self):
@@ -33,7 +35,7 @@ class Stock():
 	@puts.setter
 	def puts(self, value):
 		self._puts = value
-		self.filteredPuts = self._filterChain(value)
+		self.filteredPuts = self._filterChain(value, OptionType.Put)
 
 	@property
 	def session(self):
@@ -58,8 +60,18 @@ class Stock():
 	def url(self):
 		return f'https://query1.finance.yahoo.com/v7/finance/options/{self.symbol}'
 
-	def _filterChain(self, chain, threshold = 0.1):
-		return [ link for link in chain if (self.lastPrice * (1.0 - threshold) < link["strike"] < self.lastPrice * (1.0 + threshold)) and (link["bid"]) and (link["ask"]) and (link["ask"] - link["bid"] < threshold) ]
+	def _delta_time(self, link):
+		expiration = datetime.fromtimestamp(link['expiration'], tz=timezone.utc)
+		lastTradeDate = datetime.fromtimestamp(link['lastTradeDate'], tz=timezone.utc)
+		return (expiration - lastTradeDate).days / 365
+
+	def _filterChain(self, chain, optionType = OptionType.Call, threshold = 0.1):
+		result = [ link for link in chain if (self.lastPrice * (1.0 - threshold) < link["strike"] < self.lastPrice * (1.0 + threshold)) and (link["bid"]) and (link["ask"]) and (link["ask"] - link["bid"] < threshold) ]
+		for link in result:
+			link["type"] = optionType
+			self._update_link_black_scholes(link)
+
+		return result
 
 	def _update(self):
 		self.response = json.loads(self.session.get(self.url).text)["optionChain"]["result"][0]
@@ -67,12 +79,14 @@ class Stock():
 		self.calls = self.response["options"][0]["calls"]
 		self.puts = self.response["options"][0]["puts"]
 
+	def _update_link_black_scholes(self, link):
+		link["theoreticalPrice"] = self.black_scholes(self.lastPrice, link['strike'], self._delta_time(link), 0.02, link['impliedVolatility'], option=link["type"])
+
 	def black_scholes(self, S, K, T, r, sigma, option = OptionType.Call):
 		d1 = (np.log(S/K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
 		d2 = d1 - sigma * np.sqrt(T)
 		response = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
 		return response if option == OptionType.Call else -response
 
-	def show(self):
-		print(self.filteredCalls)
-		print(self.filteredPuts)
+	def show(self, type=OptionType.Call):
+		print(json.dumps(self.filteredCalls if type == OptionType.Call else self.filteredPuts))
