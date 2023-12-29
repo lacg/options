@@ -1,26 +1,21 @@
 """
-2D Quadcopter AI by Luiz Garcia.
+Stock by Luiz Garcia.
 
 More information at:
-https://github.com/lacg/quadcopter
-
-This is the main game where you can compete with AI agents.
-Collect as many balloons within the time limit.
-
-This work was inspired by a similar work from Alexandre Sajus
-
-More information at:
-https://github.com/AlexandreSajus/Quadcopter-AI
+https://github.com/lacg/options
 """
 
-import sys
+import argparse
 
+from ras.stocks.stocks import Stock
 
-def main() -> None:
-	"""
-	"""
-	print("Hi")
+def parse_arguments():
+	parser = argparse.ArgumentParser(description='Stock options')
+	parser.add_argument('symbol', help='Stock symbol. Default AAPL.', default="AAPL")
+	parser.add_argument('-o', "--optionType", help='Option type to print.', default="Call")
+	return parser.parse_args()
 
-
-if __name__ == "__main__":
-	main()
+if __name__ == '__main__':
+	args = parse_arguments()
+	Stock(args.symbol).show(args.optionType)
+	# Process the parameters as needed

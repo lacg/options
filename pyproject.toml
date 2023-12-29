@@ -12,4 +12,4 @@ license = "MIT License"
 classifiers = ["Programming Language :: Python :: 3"]
 
 [tool.flit.scripts]
-stock = "ras.stocks:stock"
+stock = "ras.stocks:main"

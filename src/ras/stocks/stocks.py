@@ -58,11 +58,11 @@ class Stock():
 
 	@property
 	def url(self):
-		return f'https://query1.finance.yahoo.com/v7/finance/options/{self.symbol}'
+		return f"https://query1.finance.yahoo.com/v7/finance/options/{self.symbol}"
 
 	def _delta_time(self, link):
-		expiration = datetime.fromtimestamp(link['expiration'], tz=timezone.utc)
-		lastTradeDate = datetime.fromtimestamp(link['lastTradeDate'], tz=timezone.utc)
+		expiration = datetime.fromtimestamp(link["expiration"], tz=timezone.utc)
+		lastTradeDate = datetime.fromtimestamp(link["lastTradeDate"], tz=timezone.utc)
 		return (expiration - lastTradeDate).days / 365
 
 	def _filterChain(self, chain, optionType = OptionType.Call, threshold = 0.1):
@@ -81,16 +81,20 @@ class Stock():
 
 	def _update_link_black_scholes(self, link):
 		dt = self._delta_time(link)
-		theoreticalPrice = self.black_scholes(self.lastPrice, link['strike'], dt, 0.02, link['impliedVolatility'], option=link["type"])
+		theoreticalPrice = self.black_scholes(self.lastPrice, link["strike"], dt, 0.02, link["impliedVolatility"], optionType = link["type"])
 		link["theoreticalPrice"] = theoreticalPrice
-		link['profitLossIfExpired'] = (theoreticalPrice - link['ask']) if link['type'] == OptionType.Call else link['bid'] - theoreticalPrice
-		link['probabilityOfProfit'] = norm.cdf((theoreticalPrice - link['lastPrice']) / (link['impliedVolatility'] *  np.sqrt(dt)))
+		link["profitLossIfExpired"] = (theoreticalPrice - link["ask"]) if link["type"] == OptionType.Call else link["bid"] - theoreticalPrice
+		probabilityByDate = link["impliedVolatility"] * np.sqrt(dt)
+		link["probabilityOfProfit"] = norm.cdf((theoreticalPrice - link["lastPrice"]) / probabilityByDate if probabilityByDate else 1)
 
-	def black_scholes(self, S, K, T, r, sigma, option = OptionType.Call):
-		d1 = (np.log(S/K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+	def black_scholes(self, S, K, T, r, sigma, optionType = OptionType.Call):
+		probabilityByDate = sigma * np.sqrt(T)
+		probabilityByDate = probabilityByDate if probabilityByDate else 1
+		d1 = (np.log(S/K) + (r + 0.5 * sigma**2) * T) / probabilityByDate
 		d2 = d1 - sigma * np.sqrt(T)
 		response = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-		return response if option == OptionType.Call else -response
+		return response if optionType == OptionType.Call else -response
 
-	def show(self, type=OptionType.Call):
-		print(json.dumps(self.filteredCalls if type == OptionType.Call else self.filteredPuts))
+	def show(self, showType="Call"):
+		optionType = OptionType[showType]
+		print(json.dumps(self.filteredCalls if optionType == OptionType.Call else self.filteredPuts))
