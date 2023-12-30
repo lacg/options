@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import json
-import pandas as pd
-import numpy as np
+import pandas
+import numpy
 import requests, json
 from scipy.stats import norm
 from enum import Enum
@@ -84,17 +84,22 @@ class Stock():
 		theoreticalPrice = self.black_scholes(self.lastPrice, link["strike"], dt, 0.02, link["impliedVolatility"], optionType = link["type"])
 		link["theoreticalPrice"] = theoreticalPrice
 		link["profitLossIfExpired"] = (theoreticalPrice - link["ask"]) if link["type"] == OptionType.Call else link["bid"] - theoreticalPrice
-		probabilityByDate = link["impliedVolatility"] * np.sqrt(dt)
+		probabilityByDate = link["impliedVolatility"] * numpy.sqrt(dt)
 		link["probabilityOfProfit"] = norm.cdf((theoreticalPrice - link["lastPrice"]) / probabilityByDate if probabilityByDate else 1)
 
+	def as_json(self, optionType="Call"):
+		optionType = OptionType[optionType]
+		return json.dumps(self.filteredCalls if optionType == OptionType.Call else self.filteredPuts)
+
 	def black_scholes(self, S, K, T, r, sigma, optionType = OptionType.Call):
-		probabilityByDate = sigma * np.sqrt(T)
+		probabilityByDate = sigma * numpy.sqrt(T)
 		probabilityByDate = probabilityByDate if probabilityByDate else 1
-		d1 = (np.log(S/K) + (r + 0.5 * sigma**2) * T) / probabilityByDate
-		d2 = d1 - sigma * np.sqrt(T)
-		response = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+		d1 = (numpy.log(S/K) + (r + 0.5 * sigma**2) * T) / probabilityByDate
+		d2 = d1 - sigma * numpy.sqrt(T)
+		response = S * norm.cdf(d1) - K * numpy.exp(-r * T) * norm.cdf(d2)
 		return response if optionType == OptionType.Call else -response
 
-	def show(self, showType="Call"):
-		optionType = OptionType[showType]
-		print(json.dumps(self.filteredCalls if optionType == OptionType.Call else self.filteredPuts))
+	def show(self, optionType="Call"):
+		j = self.as_json(optionType)
+		print("As json:\n" + j)
+		print(pandas.DataFrame(self.filteredCalls if optionType == OptionType.Call else self.filteredPuts))
